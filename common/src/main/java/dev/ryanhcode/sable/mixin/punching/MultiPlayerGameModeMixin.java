@@ -24,7 +24,7 @@ public class MultiPlayerGameModeMixin {
         assert this.minecraft.player != null;
 
         if (this.minecraft.hitResult instanceof final BlockHitResult blockHitResult) {
-            ClientSubLevelPunchHelper.clientTryPunch(blockHitResult, this.minecraft.level);
+            ClientSubLevelPunchHelper.clientTryPunch(blockHitResult, this.minecraft.level, true);
         }
     }
 

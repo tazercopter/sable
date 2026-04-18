@@ -1,7 +1,6 @@
 package dev.ryanhcode.sable.network.client;
 
 import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.api.SubLevelHelper;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.index.SableAttributes;
 import dev.ryanhcode.sable.mixinterface.entity.entity_sublevel_collision.EntityMovementExtension;
@@ -16,7 +15,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.joml.Vector3d;
 
 public class ClientSubLevelPunchHelper {
-    public static void clientTryPunch(final BlockHitResult hitResult, final Level level) {
+    /**
+     * @param testCreativeBreaking whether to prevent pushing if a creative player will destroy the block
+     */
+    public static void clientTryPunch(final BlockHitResult hitResult, final Level level, final boolean testCreativeBreaking) {
         final Minecraft minecraft = Minecraft.getInstance();
         final LocalPlayer player = minecraft.player;
         if (player.blockActionRestricted(level, hitResult.getBlockPos(), minecraft.gameMode.getPlayerMode()) ||
@@ -24,7 +26,7 @@ public class ClientSubLevelPunchHelper {
             return;
         }
 
-        if (player.isCreative()) {
+        if (player.isCreative() && testCreativeBreaking) {
             final BlockState blockState = minecraft.level.getBlockState(hitResult.getBlockPos());
 
             if (player.getMainHandItem().getItem().canAttackBlock(blockState, minecraft.level, hitResult.getBlockPos(), player)) {

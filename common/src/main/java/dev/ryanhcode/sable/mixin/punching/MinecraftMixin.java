@@ -43,7 +43,7 @@ public abstract class MinecraftMixin {
         if (hitResult.getType() == HitResult.Type.BLOCK) {
             final FluidState state = this.level.getFluidState(hitResult.getBlockPos());
             if (!state.isEmpty()) {
-                ClientSubLevelPunchHelper.clientTryPunch(hitResult, this.level);
+                ClientSubLevelPunchHelper.clientTryPunch(hitResult, this.level, false);
             }
         }
     }
