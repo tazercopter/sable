@@ -84,6 +84,7 @@
     "compatibility.create.block_entity_config.BlockEntityConfigurationPacketMixin",
     "compatibility.create.chain_conveyor.ChainConveyorBlockEntityMixin",
     "compatibility.create.chain_conveyor.ChainConveyorBlockMixin",
+    "compatibility.create.bogey.AbstractBogeyBlockEntityMixin",
     "compatibility.create.contraptions.AbstractContraptionEntityMixin",
     "compatibility.create.contraptions.ContraptionColliderMixin",
     "compatibility.create.contraptions.Matrix3dAccessor",
