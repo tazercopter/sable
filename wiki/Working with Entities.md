@@ -15,7 +15,7 @@ Sable therefore has tags to customize how entities interact with entity kicking:
 
 To specify that an entity should stay inside of sub-level plots, and should never be kicked:
 ```js
-// /data/sable/tags/entity_type/retain_in_sub_level.json
+// /data/examplemod/tags/entity_type/retain_in_sub_level.json
 {
   "replace": false,
   "values": [
@@ -37,5 +37,5 @@ Players that are tracking a sub-level will additionally log-out and log-in with 
 Sable has utilities to check the tracking sub-level of an entity:
 ```java
 Entity entity = ...;
-SubLevel subLevel = EntitySubLevelUtil.getTrackingSubLevel(this.entity);
+@Nullable SubLevel subLevel = EntitySubLevelUtil.getTrackingSubLevel(entity);
 ```
