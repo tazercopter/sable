@@ -69,6 +69,7 @@
   "commands.sable.info.linear_velocity": "    Linear Velocity: %.2f %.2f %.2f",
   "commands.sable.info.angular_velocity": "    Angular Velocity: %.2f %.2f %.2f",
   "commands.sable.info.mass": "    Mass: %.2f",
+  "commands.sable.info.world_bounds": "    World Bounds: %.2f x %.2f x %.2f",
 
   "commands.data.sub_level.get": "%s on sub-level %s after scale factor of %s is %s",
   "commands.data.sub_level.modified": "Modified sub-level auxiliary data of %s",
