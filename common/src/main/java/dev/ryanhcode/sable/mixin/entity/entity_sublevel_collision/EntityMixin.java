@@ -230,7 +230,7 @@ public abstract class EntityMixin implements EntityMovementExtension {
             if (vehicleSubLevel != null) {
                 this.sable$trackingSubLevel = vehicleSubLevel;
             } else {
-                this.sable$trackingSubLevel = EntitySubLevelUtil.getTrackingSubLevel(vehicle);
+                this.sable$trackingSubLevel = Sable.HELPER.getTrackingSubLevel(vehicle);
             }
         }
 
