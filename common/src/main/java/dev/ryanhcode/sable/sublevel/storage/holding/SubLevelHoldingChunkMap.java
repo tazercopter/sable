@@ -522,12 +522,8 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
     }
 
     public void moveToUnloaded(final ServerSubLevel subLevel, final ChunkPos pos) {
-        // When sub-levels unload there is no logs indicating that it unloaded. This then leads to people
-        // making issues on the tracker, so always print this message saying the sub-level was unloaded
         if (VERBOSE) {
             Sable.LOGGER.info("Sub-level {} with pointer {} detected unloaded chunk, moving to {}", subLevel, subLevel.getLastSerializationPointer(), pos);
-        } else {
-            Sable.LOGGER.info("Sub-level {} with pointer {} detected unloaded chunk, unloading", subLevel.getUniqueId(), subLevel.getLastSerializationPointer());
         }
 
         final Collection<ServerSubLevel> chain = SubLevelHelper.getLoadingDependencyChain(subLevel);
