@@ -3,6 +3,7 @@ package dev.ryanhcode.sable.mixin.entity.entity_sublevel_collision;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.entity.EntitySubLevelUtil;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
@@ -31,14 +32,14 @@ public class CameraMixin {
 
     @WrapOperation(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
     private void sable$setPosition(final Camera instance,
-                                   final double d,
-                                   final double e,
-                                   final double f,
+                                   final double x,
+                                   final double y,
+                                   final double z,
                                    final Operation<Void> original,
                                    @Local(argsOnly = true) final Entity entity,
                                    @Local(argsOnly = true) final float partialTicks) {
 
-        final SubLevel trackingSubLevel = EntitySubLevelUtil.getTrackingOrVehicleSubLevel(entity);
+        final SubLevel trackingSubLevel = Sable.HELPER.getTrackingOrVehicleSubLevel(entity);
 
         if (trackingSubLevel instanceof final ClientSubLevel clientSubLevel) {
             final double yOffset = Mth.lerp(partialTicks, this.eyeHeightOld, this.eyeHeight);
@@ -57,7 +58,7 @@ public class CameraMixin {
             return;
         }
 
-        original.call(instance, d, e, f);
+        original.call(instance, x, y, z);
 
     }
 
