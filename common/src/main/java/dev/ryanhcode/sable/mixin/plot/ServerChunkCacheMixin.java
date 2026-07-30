@@ -23,7 +23,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -37,34 +36,17 @@ public class ServerChunkCacheMixin {
 
     @Shadow
     @Final
-    public ChunkMap chunkMap;
-    @Shadow
-    @Final
-    private ServerLevel level;
+    ServerLevel level;
+
     @Unique
     private EmptyLevelChunk sable$emptyChunk;
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    public void init(final ServerLevel serverLevel, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final DataFixer dataFixer, final StructureTemplateManager structureTemplateManager, final Executor executor, final ChunkGenerator chunkGenerator, final int i, final int j, final boolean bl, final ChunkProgressListener chunkProgressListener, final ChunkStatusUpdateListener chunkStatusUpdateListener, final Supplier supplier, final CallbackInfo ci) {
+    public void init(final ServerLevel serverLevel, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final DataFixer dataFixer, final StructureTemplateManager structureTemplateManager,
+                     final Executor executor, final ChunkGenerator chunkGenerator, final int i, final int j, final boolean bl, final ChunkProgressListener chunkProgressListener,
+                     final ChunkStatusUpdateListener chunkStatusUpdateListener, final Supplier supplier, final CallbackInfo ci) {
         this.sable$emptyChunk = new EmptyLevelChunk(serverLevel, new ChunkPos(0, 0), serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS));
     }
-
-    // TODO: Remove if chunk ticking works as intended
-    /*@WrapOperation(method = "tickChunks", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayListWithCapacity(I)Ljava/util/ArrayList;", remap = false))
-    private ArrayList<ServerChunkCache.ChunkAndHolder> tickChunks(final int initialArraySize, final Operation<ArrayList<ServerChunkCache.ChunkAndHolder>> original) {
-        final ArrayList<ServerChunkCache.ChunkAndHolder> list = original.call(initialArraySize);
-
-        final SubLevelContainer container = this.sable$getPlotContainer();
-        for (final SubLevel subLevel : container.getAllSubLevels()) {
-            final Collection<PlotChunkHolder> chunks = subLevel.getPlot().getLoadedChunks();
-            for (final PlotChunkHolder plotChunkHolder : chunks) {
-                if (!this.chunkMap.visibleChunkMap.containsKey(plotChunkHolder.getPos().toLong()))
-                    list.add(new ServerChunkCache.ChunkAndHolder(plotChunkHolder.getChunk(), plotChunkHolder));
-            }
-        }
-
-        return list;
-    }*/
 
     @Unique
     private @NotNull SubLevelContainer sable$getPlotContainer() {
@@ -177,6 +159,14 @@ public class ServerChunkCacheMixin {
             final PlotChunkHolder holder = container.getChunkHolder(chunkPos);
 
             cir.setReturnValue(holder);
+        }
+    }
+
+    @Inject(method = "addRegionTicket", at = @At("HEAD"), cancellable = true)
+    private <T> void addRegionTicket(final TicketType<T> type, final ChunkPos pos, final int distance, final T value, final CallbackInfo ci) {
+        final SubLevelContainer container = this.sable$getPlotContainer();
+        if (container.inBounds(pos)) {
+            ci.cancel();
         }
     }
 }

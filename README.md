@@ -7,10 +7,13 @@
     <a href="https://modrinth.com/mod/sable">
         <img src="https://img.shields.io/modrinth/dt/sable?logo=modrinth&amp;label=&amp;suffix=%20&amp;style=flat&amp;color=242629&amp;labelColor=5CA424&amp;logoColor=1C1C1C" alt="Modrinth Download"/>
     </a>
+    <a href="https://www.curseforge.com/minecraft/mc-mods/sable">
+        <img src="https://img.shields.io/curseforge/dt/1312371?logo=curseforge&amp;label=&amp;suffix=%20&amp;style=flat&amp;color=242629&amp;labelColor=F16436&amp;logoColor=1C1C1C" alt="CurseForge Download"/>
+    </a>
 </div>
 </h1>
 
-<p>Sable is an intrusive library mod for Minecraft that adds my take on interactive moving block structures, called "sub-levels". Sub-levels contain normal Minecraft chunks, entities, and block-entities, but exist at a separate dynamic position and orientation within Minecraft levels. My goal is to maximize compatability, performance, and immersion of interacting with sub-levels, as simply as possible.</p>
+<p>Sable is an intrusive library mod for Minecraft that adds my take on interactive moving block structures, called "sub-levels". Sub-levels contain normal Minecraft chunks, entities, and block-entities, but exist at a separate dynamic position and orientation within Minecraft levels. My goal is to maximize compatibility, performance, and immersion of interacting with sub-levels, as simply as possible.</p>
 
 ### Compatibility Warning
 
@@ -24,10 +27,12 @@ view [Sable Companion](https://github.com/ryanhcode/sable-companion).
 
 View the [Sable Developer Wiki](https://github.com/ryanhcode/sable/wiki) for documentation and guides.
 
+Join sable zone for development discussion: https://discord.gg/pnkzu2dtVA
+
 # Building Rust Natives
 
 1. Install Docker from https://www.docker.com/get-started/ or from your relevant package manager
-2. Run `gradlew common:buildImage` (only has to be done once)
+2. Run `gradlew common:buildImages` (only has to be done once)
 3. Run `gradlew common:buildRustNatives`
 
 ### Thanks

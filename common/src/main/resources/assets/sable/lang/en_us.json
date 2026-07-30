@@ -69,10 +69,14 @@
   "commands.sable.info.linear_velocity": "    Linear Velocity: %.2f %.2f %.2f",
   "commands.sable.info.angular_velocity": "    Angular Velocity: %.2f %.2f %.2f",
   "commands.sable.info.mass": "    Mass: %.2f",
+  "commands.sable.info.world_bounds": "    World Bounds: %.2f x %.2f x %.2f",
 
   "commands.data.sub_level.get": "%s on sub-level %s after scale factor of %s is %s",
   "commands.data.sub_level.modified": "Modified sub-level auxiliary data of %s",
   "commands.data.sub_level.query": "%s has the following auxiliary sub-level data: %s",
+
+  "commands.sable.forceload.add.count": "Added force-loading tickets for %s sub-level(s)",
+  "commands.sable.forceload.remove.count": "Removed force-loading tickets for %s sub-level(s)",
 
   "argument.sable.body.selector.all": "All sub-levels",
   "argument.sable.body.selector.nearest": "Nearest sub-level",
@@ -104,7 +108,9 @@
   "argument.sable.sub_level.modifier.sort": "Sort the sub-levels by distance",
   "argument.sable.unexpected_end_of_input": "Unexpected end of input",
   "argument.sable.single_sub_level_required": "Only one sub-level is allowed, but the provided selector allows more than one",
-  "argument.sable.sub_level.invalid": "Invalid sub-level selector",
+  "argument.sable.invalid_selector": "Invalid sub-level selector",
+  "argument.sable.invalid_uuid": "Invalid UUID",
+  "argument.sable.cannot_find_sub_level": "Cannot find sub-level",
   "argument.sable.sub_level.expected_end_of_modifier": "Expected end of modifier",
   "argument.sable.sub_level.expected_positive_integer": "Expected a positive integer",
   "argument.sable.sub_level.expected_positive_decimal": "Expected a positive decimal",
@@ -136,7 +142,7 @@
   "force_group.sable.balloon_lift": "Balloon Lift",
   "force_group.sable.propulsion": "Propulsion",
   "force_group.sable.lift": "Lift",
-  "force_group.sable.magnetic_force": "Magnetic Force",
+  "force_group.sable.magnetic_force": "Magnetic",
 
   "schematic.sable.mirror_not_supported": "Cannot mirror schematics containing sub-levels!",
 

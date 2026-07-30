@@ -1,6 +1,8 @@
 package dev.ryanhcode.sable.mixin.plot;
 
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.mixin.loaded_chunk_debug.ClientChunkCacheStorageAccessor;
+import dev.ryanhcode.sable.mixinterface.loaded_chunk_debug.DebugChunkProviderAttachments;
 import dev.ryanhcode.sable.platform.SableChunkEventPlatform;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -21,14 +23,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Consumer;
 
 /**
  * Makes the chunk access methods in the client chunk cache use the plot system.
  */
 @Mixin(ClientChunkCache.class)
-public abstract class ClientChunkCacheMixin {
+public abstract class ClientChunkCacheMixin implements DebugChunkProviderAttachments {
 
     @Shadow
     @Final
@@ -44,6 +49,9 @@ public abstract class ClientChunkCacheMixin {
     private static boolean isValidChunk(@Nullable final LevelChunk levelChunk, final int i, final int j) {
         return false;
     }
+
+    @Shadow
+    volatile ClientChunkCache.Storage storage;
 
     @Unique
     private @NotNull SubLevelContainer sable$getPlotContainer() {
@@ -98,7 +106,8 @@ public abstract class ClientChunkCacheMixin {
     }
 
     @Inject(method = "replaceWithPacketData", at = @At("HEAD"), cancellable = true)
-    private void replaceWithPacketData(final int x, final int z, final FriendlyByteBuf friendlyByteBuf, final CompoundTag compoundTag, final Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer, final CallbackInfoReturnable<LevelChunk> cir) {
+    private void replaceWithPacketData(final int x, final int z, final FriendlyByteBuf friendlyByteBuf, final CompoundTag compoundTag,
+                                       final Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer, final CallbackInfoReturnable<LevelChunk> cir) {
         final SubLevelContainer container = this.sable$getPlotContainer();
 
         if (container.inBounds(x, z)) {
@@ -119,10 +128,26 @@ public abstract class ClientChunkCacheMixin {
             this.level.onChunkLoaded(chunkPos);
             this.level.getLightEngine().setLightEnabled(chunkPos, true);
 
-            SableChunkEventPlatform.INSTANCE.onChunkPacketReplaced(levelChunk);
+            SableChunkEventPlatform.INSTANCE.onClientChunkPacketReplaced(levelChunk);
             cir.setReturnValue(levelChunk);
         }
     }
 
+    @Override
+    public Collection<LevelChunk> sable$loadedChunks() {
+        final List<LevelChunk> loadedChunks = new LinkedList<>();
 
+        final ClientChunkCacheStorageAccessor accessor = (ClientChunkCacheStorageAccessor) (Object) this.storage;
+        if (accessor != null) {
+            final AtomicReferenceArray<LevelChunk> chunks = accessor.getChunks();
+            for (int i = 0; i < chunks.length(); i++) {
+                final LevelChunk chunk = chunks.get(i);
+                if (chunk != null) {
+                    loadedChunks.add(chunk);
+                }
+            }
+        }
+
+        return loadedChunks;
+    }
 }

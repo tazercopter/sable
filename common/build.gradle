@@ -1,150 +1,6 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 plugins {
     id 'multiloader-common'
     id 'net.neoforged.moddev'
-}
-
-def rustRootDir = file("src/main/rust")
-def rustProjectDir = file("$rustRootDir/rapier")
-def nativesDir = file("src/main/resources/natives/sable_rapier")
-def cargoCacheDir = project.layout.buildDirectory.file("cargo").get().asFile
-def docker = Os.isFamily(Os.FAMILY_MAC) ? "/usr/local/bin/docker" : "docker"
-def dockerCommand = [
-        docker,
-        'run',
-        '--rm',
-        '-v',
-        "$rustRootDir:/io",
-        '-v',
-        "$cargoCacheDir/git:/usr/local/cargo/git",
-        '-v',
-        "$cargoCacheDir/registry:/usr/local/cargo/registry",
-        '-w',
-        '/io/rapier',
-        'sable-build'
-]
-
-tasks.register('createContainersDirectory') {
-    doLast {
-        if (!cargoCacheDir.exists()) {
-            cargoCacheDir.mkdirs()
-        }
-    }
-}
-
-tasks.register('buildImage', Exec) {
-    group = 'rust'
-    workingDir rustRootDir
-    commandLine docker, 'build', '-t', 'sable-build', '.'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('cleanRust', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'clean'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('compileRust', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild'
-    dependsOn createContainersDirectory
-    finalizedBy copyRustNativesDev
-}
-
-tasks.register('compileRustMacAArch64', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild', '--release', '--target', 'aarch64-apple-darwin'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('compileRustMacX86', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild', '--release', '--target', 'x86_64-apple-darwin'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('compileRustLinuxAArch64', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild', '--release', '--target', 'aarch64-unknown-linux-gnu.2.17'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('compileRustLinux', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild', '--release', '--target', 'x86_64-unknown-linux-gnu.2.17'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('compileRustWindows', Exec) {
-    group = 'rust'
-    workingDir rustProjectDir
-    commandLine dockerCommand
-    args 'cargo', 'zigbuild', '--release', '--target', 'x86_64-pc-windows-gnu'
-    dependsOn createContainersDirectory
-}
-
-tasks.register('buildRustNatives') {
-    group = 'build'
-    description = 'Compiles all Rust natives and moves them to resources.'
-
-    dependsOn compileRustMacAArch64, compileRustMacX86, compileRustLinux, compileRustLinuxAArch64, compileRustWindows
-    finalizedBy copyRustNatives
-}
-
-tasks.register('copyRustNatives', Copy) {
-    group = 'rust'
-
-    into nativesDir
-    mustRunAfter(buildRustNatives)
-
-    def moves = [
-            [src: "target/aarch64-apple-darwin/release/libsable_rapier.dylib", dest: "sable_rapier_aarch64_macos.dylib"],
-            [src: "target/x86_64-apple-darwin/release/libsable_rapier.dylib", dest: "sable_rapier_x86_64_macos.dylib"],
-            [src: "target/x86_64-unknown-linux-gnu/release/libsable_rapier.so", dest: "sable_rapier_x86_64_linux.so"],
-            [src: "target/aarch64-unknown-linux-gnu/release/libsable_rapier.so", dest: "sable_rapier_aarch64_linux.so"],
-            [src: "target/x86_64-pc-windows-gnu/release/sable_rapier.dll", dest: "sable_rapier_x86_64_windows.dll"]
-    ]
-
-    moves.forEach { map ->
-        from(file("$rustRootDir/${map.src}")) {
-            rename { map.dest }
-        }
-    }
-}
-
-tasks.register('copyRustNativesDev', Copy) {
-    group = 'rust'
-
-    into nativesDir
-    mustRunAfter(compileRust)
-
-    def moves = [
-            [src: "target/debug/libsable_rapier.dylib", dest: "sable_rapier_aarch64_macos.dylib"],
-            [src: "target/debug/libsable_rapier.dylib", dest: "sable_rapier_x86_64_macos.dylib"],
-            [src: "target/debug/libsable_rapier.so", dest: "sable_rapier_aarch64_linux.so"],
-            [src: "target/debug/libsable_rapier.so", dest: "sable_rapier_x86_64_linux.so"],
-            [src: "target/debug/sable_rapier.dll", dest: "sable_rapier_aarch64_windows.dll"],
-            [src: "target/debug/sable_rapier.dll", dest: "sable_rapier_x86_64_windows.dll"]
-    ]
-    moves.forEach { map ->
-        from(file("$rustRootDir/${map.src}")) {
-            rename { map.dest }
-        }
-    }
 }
 
 neoForge {
@@ -157,6 +13,19 @@ neoForge {
     parchment {
         minecraftVersion = parchment_minecraft
         mappingsVersion = parchment_version
+    }
+}
+
+// Declare capabilities on the outgoing configurations.
+// Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
+['apiElements', 'runtimeElements', 'sourcesElements'/*, 'javadocElements'*/].each { variant ->
+    configurations."$variant".outgoing {
+        capability("$group:${base.archivesName.get()}:$version")
+        capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
+        capability("$group:$mod_id:$version")
+    }
+    publishing.publications.configureEach {
+        suppressPomMetadataWarningsFor(variant)
     }
 }
 
@@ -177,22 +46,25 @@ artifacts {
 }
 
 dependencies {
-    compileOnly "org.spongepowered:mixin:0.8.5"
+    compileOnly "net.fabricmc:sponge-mixin:0.15.2+mixin.0.8.7"
 
     // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
     compileOnly "io.github.llamalad7:mixinextras-common:0.5.3"
     annotationProcessor "io.github.llamalad7:mixinextras-common:0.5.3"
+
+    implementation "org.apache.maven:maven-artifact:3.8.5"
 
     api "dev.ryanhcode.sable-companion:sable-companion-common-$minecraft_version:$sable_companion_version"
 
     implementation("foundry.veil:veil-common-${project.minecraft_version}:${project.veil_version}") {
         exclude group: "maven.modrinth"
     }
+    compileOnly("foundry.imguimc:imguimc-common-${project.minecraft_version}:${project.imguimc_version}")
 
     compileOnly("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}") {
         transitive = false
     }
 
-    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forgeconfigapiport_version}"
     //source: https://github.com/Fuzss/forgeconfigapiport
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forgeconfigapiport_version}"
 }

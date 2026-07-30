@@ -11,19 +11,21 @@ import dev.ryanhcode.sable.sublevel.plot.PlotChunkHolder;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelOccupancySavedData;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import dev.ryanhcode.sable.util.iterator.ListBackedFilterIterator;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
+import org.joml.Vector3dc;
 
 import java.util.*;
 
@@ -47,11 +49,11 @@ public abstract class SubLevelContainer {
     /**
      * All of the loaded sub-levels in the plotgrid
      */
-    private final List<SubLevel> allSubLevels = new ObjectArrayList<>();
+    private final List<SubLevel> allSubLevels = new ReferenceArrayList<>();
     /**
      * All of the loaded sub-levels in the plotgrid, by uuid
      */
-    private final Map<UUID, SubLevel> subLevelsByUUID = new HashMap<>();
+    private final Map<UUID, SubLevel> subLevelsByUUID = new Object2ObjectOpenHashMap<>();
     /**
      * The occupancy of the plotgrid, including loaded and unloaded plots
      */
@@ -59,7 +61,7 @@ public abstract class SubLevelContainer {
     /**
      * All observers/listeners for the plotgrid
      */
-    private final List<SubLevelObserver> observers = new ObjectArrayList<>();
+    private final List<SubLevelObserver> observers = new ReferenceArrayList<>();
 
     /**
      * The level of the plotgrid
@@ -359,6 +361,13 @@ public abstract class SubLevelContainer {
     }
 
     /**
+     * @return if a global position is within the plotgrid.
+     */
+    public boolean inBounds(final Vector3dc pos) {
+        return this.inBounds(Mth.floor(pos.x()) >> SectionPos.SECTION_BITS, Mth.floor(pos.z()) >> SectionPos.SECTION_BITS);
+    }
+
+    /**
      * @return if a global chunk position is within the plotgrid.
      */
     public boolean inBounds(final int x, final int z) {
@@ -411,24 +420,23 @@ public abstract class SubLevelContainer {
             return List.of();
         }
 
-        final SubLevel subLevel = plot.getSubLevel();
-
-        if (subLevel instanceof final ServerSubLevel serverSubLevel) {
-            final Collection<UUID> trackingPlayers = serverSubLevel.getTrackingPlayers();
-            final ObjectList<ServerPlayer> players = new ObjectArrayList<>(trackingPlayers.size());
-
-            for (final UUID uuid : serverSubLevel.getTrackingPlayers()) {
-                final ServerPlayer player = this.level.getServer().getPlayerList().getPlayer(uuid);
-
-                if (player != null) {
-                    players.add(player);
-                }
-            }
-
-            return players;
+        if (!(plot.getSubLevel() instanceof final ServerSubLevel serverSubLevel)) {
+            return List.of();
         }
 
-        return List.of();
+        final Collection<UUID> trackingPlayers = serverSubLevel.getTrackingPlayers();
+        final ObjectList<ServerPlayer> players = new ObjectArrayList<>(trackingPlayers.size());
+        final PlayerList playerList = this.level.getServer().getPlayerList();
+
+        for (final UUID uuid : serverSubLevel.getTrackingPlayers()) {
+            final ServerPlayer player = playerList.getPlayer(uuid);
+
+            if (player != null) {
+                players.add(player);
+            }
+        }
+
+        return ObjectLists.unmodifiable(players);
     }
 
     /**

@@ -5,6 +5,7 @@ import dev.ryanhcode.sable.api.block.BlockEntitySubLevelReactionWheel;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
+import dev.ryanhcode.sable.platform.SableChunkEventPlatform;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -104,7 +105,7 @@ public abstract class LevelPlot {
      * @param logSize       the log_2 of the side length of a plot
      * @param subLevel      the sub-level using this plot
      */
-    public LevelPlot(final SubLevelContainer container, final int x, final int z, final int logSize, final SubLevel subLevel) {
+    public LevelPlot(final SubLevelContainer container, final int x, final int z, final int logSize, final @NotNull SubLevel subLevel) {
         this.container = container;
         this.plotPos = new ChunkPos(x, z);
         this.logSize = logSize;
@@ -132,7 +133,9 @@ public abstract class LevelPlot {
     public BlockPos getCenterBlock() {
         // TODO make this the actual center
         final ChunkPos centerChunk = this.getCenterChunk();
-        return new BlockPos(centerChunk.getMinBlockX() + 8, 128, centerChunk.getMinBlockZ() + 8);
+        final Level level = this.subLevel.getLevel();
+        
+        return new BlockPos(centerChunk.getMinBlockX() + 8, (level.getMinBuildHeight() + level.getMaxBuildHeight()) / 2, centerChunk.getMinBlockZ() + 8);
     }
 
     /**
@@ -177,6 +180,8 @@ public abstract class LevelPlot {
 
         final LevelChunk chunk = new LevelChunk(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, sections, null, null);
         this.newChunk(pos, chunk, true);
+
+        SableChunkEventPlatform.INSTANCE.onPlotChunkLoaded(chunk);
     }
 
 

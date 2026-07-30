@@ -1,6 +1,7 @@
 package dev.ryanhcode.sable.sublevel.storage.serialization;
 
 import dev.ryanhcode.sable.Sable;
+import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.storage.holding.GlobalSavedSubLevelPointer;
 import dev.ryanhcode.sable.sublevel.storage.holding.SavedSubLevelPointer;
 import dev.ryanhcode.sable.sublevel.storage.holding.SubLevelHoldingChunk;
@@ -12,7 +13,9 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ExceptionCollector;
 import net.minecraft.world.level.ChunkPos;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -86,7 +89,7 @@ public class SubLevelStorage implements AutoCloseable {
             final SubLevelRegionFile regionFile = this.getRegionFile(chunkPos);
             return regionFile.read(chunkPos);
         } catch (final IOException e) {
-            Sable.LOGGER.error("Failed to load holding chunk for " + chunkPos, e);
+            Sable.LOGGER.error("Failed to load holding chunk for {}", chunkPos, e);
             return null;
         }
     }
@@ -116,9 +119,20 @@ public class SubLevelStorage implements AutoCloseable {
                 Sable.LOGGER.error("Couldn't find sub-level at index {} in storage file for chunk {}", pointer.subLevelIndex(), chunkPos);
                 return null;
             }
+
             final SubLevelData subLevel = SubLevelSerializer.fromData(tag);
 
             if (subLevel != null) {
+                final BoundingBox3d worldBounds = subLevel.bounds();
+
+                if (worldBounds.minX == 0.0 && worldBounds.minY == 0.0 && worldBounds.minZ == 0.0 &&
+                        worldBounds.maxX == 0.0 && worldBounds.maxY == 0.0 && worldBounds.maxZ == 0.0) {
+
+                    Sable.LOGGER.error("Recovering zeroed out bounds for sub-level {} loaded at {} in chunk {}", subLevel, pointer, chunkPos);
+                    final Vector3d position = subLevel.pose().position();
+                    worldBounds.set(position.x, position.y, position.z, position.x, position.y, position.z).expand(1.0);
+                }
+
                 subLevel.setOriginLoadedChunk(chunkPos);
             } else {
                 Sable.LOGGER.error("Failed to load sub-level at index {} in storage file for chunk {}", pointer.subLevelIndex(), chunkPos);
@@ -126,7 +140,7 @@ public class SubLevelStorage implements AutoCloseable {
 
             return subLevel;
         } catch (final IOException e) {
-            Sable.LOGGER.error("Failed to load sub-level for " + chunkPos, e);
+            Sable.LOGGER.error("Failed to load sub-level for {}", chunkPos, e);
             return null;
         }
     }
@@ -159,7 +173,7 @@ public class SubLevelStorage implements AutoCloseable {
                 storageIndex++;
             }
         } catch (final IOException e) {
-            Sable.LOGGER.error("Failed to save sub-level for " + chunkPos, e);
+            Sable.LOGGER.error("Failed to save sub-level for {}", chunkPos, e);
         }
         return null;
     }
@@ -175,7 +189,7 @@ public class SubLevelStorage implements AutoCloseable {
             final SubLevelStorageFile storageFile = this.getRegionStorageFile(pointer.chunkPos(), pointer.storageIndex());
             storageFile.write(pointer.subLevelIndex(), subLevel != null ? subLevel.fullTag() : null);
         } catch (final IOException e) {
-            Sable.LOGGER.error("Failed to save sub-level for " + pointer.chunkPos(), e);
+            Sable.LOGGER.error("Failed to save sub-level for {}", pointer.chunkPos(), e);
         }
     }
 
@@ -223,7 +237,7 @@ public class SubLevelStorage implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        final ExceptionCollector<IOException> exceptionCollector = new ExceptionCollector();
+        final ExceptionCollector<IOException> exceptionCollector = new ExceptionCollector<>();
 
         for (final SubLevelStorageFile storageFile : this.storageCache.values()) {
             try {
@@ -242,6 +256,12 @@ public class SubLevelStorage implements AutoCloseable {
         }
 
         exceptionCollector.throwIfPresent();
+    }
+
+    @NotNull
+    @ApiStatus.Internal
+    public Path getFolder() {
+        return this.folder;
     }
 
     /**

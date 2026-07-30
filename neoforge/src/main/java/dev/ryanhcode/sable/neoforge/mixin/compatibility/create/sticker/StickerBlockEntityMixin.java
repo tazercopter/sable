@@ -7,8 +7,8 @@ import com.simibubi.create.content.contraptions.glue.SuperGlueItem;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import dev.ryanhcode.sable.ActiveSableCompanion;
 import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.api.physics.constraint.fixed.FixedConstraintConfiguration;
-import dev.ryanhcode.sable.api.physics.constraint.fixed.FixedConstraintHandle;
+import dev.ryanhcode.sable.api.physics.constraint.FixedConstraintConfiguration;
+import dev.ryanhcode.sable.api.physics.constraint.FixedConstraintHandle;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
@@ -208,6 +208,11 @@ public abstract class StickerBlockEntityMixin extends SmartBlockEntity implement
     private void sable$applyConstraint(final ServerSubLevel thisSubLevel, final ServerSubLevel otherSubLevel) {
         if (!(this.level instanceof final ServerLevel serverLevel)) {
             throw new IllegalStateException("StickerBlockEntity must be on a ServerLevel to apply constraints.");
+        }
+
+        if (thisSubLevel == otherSubLevel) {
+            this.sable$removeConstraint();
+            return;
         }
 
         final FixedConstraintConfiguration constraint = new FixedConstraintConfiguration(

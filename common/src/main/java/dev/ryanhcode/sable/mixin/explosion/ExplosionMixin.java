@@ -19,7 +19,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.projectile.windcharge.WindCharge;
+import net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
@@ -102,53 +102,35 @@ public class ExplosionMixin {
 
         for (final SubLevel subLevel : subLevels) {
             final Pose3d pose = subLevel.logicalPose();
-
-            final BoundingBox3d localBounds = new BoundingBox3d();
-            globalBounds.transformInverse(pose, localBounds);
-
-            final BoundingBox3i blockBounds = new BoundingBox3i(
-                    Mth.floor(localBounds.minX()),
-                    Mth.floor(localBounds.minY()),
-                    Mth.floor(localBounds.minZ()),
-                    Mth.floor(localBounds.maxX()),
-                    Mth.floor(localBounds.maxY()),
-                    Mth.floor(localBounds.maxZ())
-            );
-
+            final Vec3 localRayPosition = pose.transformPositionInverse(new Vec3(d4, d6, d8));
             final Vec3 localExplosionPosition = pose.transformPositionInverse(new Vec3(this.x, this.y, this.z));
 
-            for (int x = blockBounds.minX(); x <= blockBounds.maxX(); x++) {
-                for (int z = blockBounds.minZ(); z <= blockBounds.maxZ(); z++) {
-                    for (int y = blockBounds.minY(); y <= blockBounds.maxY(); y++) {
-                        blockpos = new BlockPos(x, y, z);
-                        blockstate = this.level.getBlockState(blockpos);
-                        fluidstate = this.level.getFluidState(blockpos);
+            blockpos = BlockPos.containing(localRayPosition);
+            blockstate = this.level.getBlockState(blockpos);
+            fluidstate = this.level.getFluidState(blockpos);
 
-                        final boolean canExplodeBefore = f > 0.0;
+            final boolean canExplodeBefore = f > 0.0;
 
-                        final Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(self, this.level, blockpos, blockstate, fluidstate);
-                        if (optional.isPresent()) {
-                            f -= (optional.get() + 0.3F) * 0.3F;
-                        }
+            final Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(self, this.level, blockpos, blockstate, fluidstate);
+            if (optional.isPresent()) {
+                f -= (optional.get() + 0.3F) * 0.3F;
+            }
 
-                        if (f > 0.0F && this.damageCalculator.shouldBlockExplode(self, this.level, blockpos, blockstate, f)) {
-                            set.add(blockpos);
-                        }
+            if (f > 0.0F && this.damageCalculator.shouldBlockExplode(self, this.level, blockpos, blockstate, f)) {
+                set.add(blockpos);
+            }
 
-                        final boolean wind = this.source instanceof WindCharge && !blockstate.isAir();
-                        if (canExplodeBefore && (f < 0.0f || wind) && explodedSet.get().add(blockpos)) {
-                            explodedSet.get().add(blockpos);
+            final boolean wind = (this.source instanceof AbstractWindCharge || this.damageCalculator == AbstractWindCharge.EXPLOSION_DAMAGE_CALCULATOR) && !blockstate.isAir();
+            if (canExplodeBefore && (f < 0.0f || wind) && explodedSet.get().add(blockpos)) {
+                explodedSet.get().add(blockpos);
 
-                            if (subLevel instanceof final ServerSubLevel serverSubLevel) {
-                                final SubLevelPhysicsSystem physicsSystem = ((ServerSubLevelContainer) container).physicsSystem();
-                                final RigidBodyHandle handle = physicsSystem.getPhysicsHandle(serverSubLevel);
+                if (subLevel instanceof final ServerSubLevel serverSubLevel) {
+                    final SubLevelPhysicsSystem physicsSystem = ((ServerSubLevelContainer) container).physicsSystem();
+                    final RigidBodyHandle handle = physicsSystem.getPhysicsHandle(serverSubLevel);
 
-                                final Vec3 pos = blockpos.getCenter();
-                                final Vec3 force = pos.subtract(localExplosionPosition).normalize().scale(5.0);
-                                handle.applyImpulseAtPoint(pos, force);
-                            }
-                        }
-                    }
+                    final Vec3 pos = blockpos.getCenter();
+                    final Vec3 force = pos.subtract(localExplosionPosition).normalize().scale(5.0);
+                    handle.applyImpulseAtPoint(pos, force);
                 }
             }
         }

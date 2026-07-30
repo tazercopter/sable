@@ -1,7 +1,24 @@
+import net.fabricmc.loom.task.RemapJarTask
+
 plugins {
-    id "me.modmuss50.mod-publish-plugin" version "1.1.0" // https://github.com/modmuss50/mod-publish-plugin
-    id "fabric-loom"
-    id "multiloader-loader"
+    id 'me.modmuss50.mod-publish-plugin'
+    id 'net.fabricmc.fabric-loom-remap'
+    id 'multiloader-loader'
+}
+
+evaluationDependsOn(":sable_rapier")
+tasks.register("remapRapierJar", RemapJarTask) {
+    def rapier = project(":sable_rapier")
+    def jar = rapier.tasks.named("jar", Jar)
+    dependsOn(jar)
+
+    inputFile = jar.flatMap { it.archiveFile }
+    archiveFileName = jar.flatMap { it.archiveFileName }
+}
+
+remapJar {
+    dependsOn "remapRapierJar"
+    nestedJars.from(remapRapierJar.archiveFile)
 }
 
 dependencies {
@@ -17,13 +34,19 @@ dependencies {
     modImplementation fabricApi.module("fabric-resource-loader-v0", project.fabric_version)
     modImplementation fabricApi.module("fabric-convention-tags-v2", project.fabric_version)
 
+    include(implementation("org.apache.maven:maven-artifact:3.8.5"))
+
     include(modApi("dev.ryanhcode.sable-companion:sable-companion-fabric-$minecraft_version:$sable_companion_version"))
 
-    modCompileOnly "maven.modrinth:sodium:$rootProject.sodium_version"
-    modCompileOnly "maven.modrinth:distanthorizons:$rootProject.distant_horizons_version"
+    modCompileOnly "net.caffeinemc:sodium-fabric:${rootProject.sodium_version}"
+    modCompileOnly "maven.modrinth:distanthorizons:${rootProject.distant_horizons_version}"
     modCompileOnly "maven.modrinth:sodium-extras:fabric-${minecraft_version}-$sodiumextras_version"
+    modCompileOnly "maven.modrinth:shoulder-surfing-reloaded:${minecraft_version}-${project.shouldersurfing_version}+fabric"
 
     include(modApi("foundry.veil:veil-fabric-${project.minecraft_version}:${project.veil_version}"))
+    modCompileOnly("foundry.imguimc:imguimc-fabric-${project.minecraft_version}:${project.imguimc_version}")
+
+    runtimeOnly(project(path: ":sable_rapier", configuration: "runtimeElements"))
 
     include(modApi("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}")) //source: https://github.com/Fuzss/forgeconfigapiport-fabric
 }
@@ -51,11 +74,13 @@ loom {
             inherit(client)
             setConfigName(configName + " | Mixin Export")
             vmArg("-Dmixin.debug.export=true")
+            runDir("runs/client")
         }
         serverMixinExport {
             inherit(server)
             setConfigName(configName + " | Mixin Export")
             vmArg("-Dmixin.debug.export=true")
+            runDir("runs/server")
         }
     }
 }

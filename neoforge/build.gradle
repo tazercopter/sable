@@ -1,5 +1,5 @@
 plugins {
-    id "me.modmuss50.mod-publish-plugin" version "1.1.0" // https://github.com/modmuss50/mod-publish-plugin
+    id 'me.modmuss50.mod-publish-plugin'
     id 'multiloader-loader'
     id 'net.neoforged.moddev'
 }
@@ -22,9 +22,11 @@ neoForge {
         }
         client {
             client()
+            gameDirectory = project.file("runs/client")
         }
         server {
             server()
+            gameDirectory = project.file("runs/server")
         }
         gameTest {
             type = "gameTestServer"
@@ -35,11 +37,13 @@ neoForge {
             client()
             ideName = "NeoForge Client | Mixin Export (${project.path})"
             systemProperty("mixin.debug.export", "true")
+            gameDirectory = project.file("runs/client")
         }
         serverMixinExport {
             server()
             ideName = "NeoForge Server | Mixin Export (${project.path})"
             systemProperty("mixin.debug.export", "true")
+            gameDirectory = project.file("runs/server")
         }
     }
     mods {
@@ -82,11 +86,12 @@ dependencies {
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 
     compileOnly("maven.modrinth:protomanlys-weather:${pmweather_version}")
-    compileOnly("io.github.mortuusars.exposure:exposure-${minecraft_version}-neoforge:${exposure_version}") { transitive = false }
+    compileOnly("io.github.mortuusars.exposure:exposure-${minecraft_version}-neoforge:${project.exposure_version}") { transitive = false }
     compileOnly("maven.modrinth:jade:${project.jade_version}+neoforge") { transitive = false }
     compileOnly("maven.modrinth:jade-addons-forge:${project.jade_addons_version}+neoforge") { transitive = false }
+    compileOnly("maven.modrinth:shoulder-surfing-reloaded:${minecraft_version}-${project.shouldersurfing_version}+neoforge") { transitive = false }
 
-    compileOnly "maven.modrinth:sodium:$sodium_version"
+    compileOnly "net.caffeinemc:sodium-neoforge-mod:${sodium_version}"
     compileOnly("maven.modrinth:iris:$iris_version") { transitive = false }
     compileOnly("maven.modrinth:sodium-extras:neoforge-${minecraft_version}-$sodiumextras_version") { transitive = false }
 
@@ -94,4 +99,8 @@ dependencies {
         exclude group: "maven.modrinth"
         exclude group: "me.fallenbreath"
     })
+
+    jarJar(runtimeOnly(project(path: ":sable_rapier", configuration: "runtimeElements")))
+
+    compileOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
 }
